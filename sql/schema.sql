@@ -1,7 +1,11 @@
+-- Danger: uncomment only for a full reset. Deletes all data
+
 /*
 DROP TABLE IF EXISTS stats CASCADE;
 DROP TABLE IF EXISTS games CASCADE;
 DROP TABLE IF EXISTS teams CASCADE;
+DROP TABLE IF EXISTS engine_results CASCADE;
+DROP TABLE IF EXISTS weekly_rankings CASCADE;
 */
 
 CREATE TABLE teams(
@@ -54,3 +58,32 @@ CREATE TABLE stats(
 	CONSTRAINT ck_plays CHECK (plays >= 0),
 	CONSTRAINT ck_turnovers CHECK (turnovers >= 0)
 );
+CREATE TABLE engine_results(
+	team_id INTEGER NOT NULL,
+	season INTEGER NOT NULL,
+	week INTEGER NOT NULL,
+	engine varchar(50) NOT NULL,
+	score DOUBLE PRECISION NOT NULL,
+	rank_num INTEGER NOT NULL,
+	CONSTRAINT pk_engine_results PRIMARY KEY (
+	team_id, season, week, engine),
+	CONSTRAINT fk_engine_results_team FOREIGN KEY (team_id)
+		REFERENCES teams (team_id),
+	CONSTRAINT ck_engine CHECK (engine IN (
+	'kenpom', 'colley', 'massey', 'resume', 'personal', 'combined')),
+	CONSTRAINT ck_rank_num CHECK (rank_num >= 1)
+);
+
+CREATE TABLE weekly_rankings(
+	season INTEGER NOT NULL,
+	week INTEGER NOT NULL,
+	team_id INTEGER NOT NULL,
+	rank_num INTEGER NOT NULL,
+	CONSTRAINT pk_weekly_rankings PRIMARY KEY(
+	season, week, team_id),
+	CONSTRAINT fk_weekly_rankings_team FOREIGN KEY (team_id)
+		REFERENCES teams (team_id),
+	CONSTRAINT unq_rank_season_week UNIQUE (season, week, rank_num),
+	CONSTRAINT ck_rank CHECK (rank_num BETWEEN 1 AND 25)
+);
+
