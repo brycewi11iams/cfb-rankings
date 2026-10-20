@@ -13,7 +13,7 @@ CREATE TABLE teams(
 	team_name VARCHAR(60) NOT NULL,
 	classification VARCHAR(5) NOT NULL,
 	CONSTRAINT pk_teams PRIMARY KEY (team_id),
-	CONSTRAINT ck_classification CHECK (classification IN ('FBS', 'FCS'))
+	CONSTRAINT ck_classification CHECK (classification IN ('fbs', 'fcs'))
 );
 
 CREATE TABLE games(
@@ -86,4 +86,3 @@ CREATE TABLE weekly_rankings(
 	CONSTRAINT unq_rank_season_week UNIQUE (season, week, rank_num),
 	CONSTRAINT ck_rank CHECK (rank_num BETWEEN 1 AND 25)
 );
-
