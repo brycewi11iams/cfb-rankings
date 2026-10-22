@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from sqlalchemy import text
 import numpy as np
 import json
 
@@ -11,6 +12,32 @@ API_KEY = os.getenv('CFBD_API_KEY')
 BASE_URL = "https://api.collegefootballdata.com" 
 headers = {'Authorization': f'Bearer {API_KEY}'}
 engine = create_engine(os.getenv('DATABASE_URL'))
+
+stats_sql = text("""                                                                                                                                                                                                         
+        INSERT INTO stats (game_id, team_id, drives, plays, yards, turnovers)                                                                                                                                                 
+        VALUES (:game_id, :team_id, :drives, :plays, :yards, :turnovers)
+        ON CONFLICT (game_id, team_id) DO UPDATE SET
+            drives = EXCLUDED.drives,
+            plays = EXCLUDED.plays,
+            yards = EXCLUDED.yards,
+            turnovers = EXCLUDED.turnovers
+    """)
+
+games_sql = text("""                                                                                                                                                                                                         
+        INSERT INTO games (game_id, season, week, game_date, home_team_id,
+                        away_team_id, home_points, away_points, neutral_site)                                                                                                                                                 
+        VALUES (:game_id, :season, :week, :game_date, :home_team_id,
+             :away_team_id, :home_points, :away_points, :neutral_site)
+        ON CONFLICT (game_id) DO UPDATE SET
+        season = EXCLUDED.season,
+         week = EXCLUDED.week,
+         game_date = EXCLUDED.game_date,
+         home_team_id = EXCLUDED.home_team_id,
+         away_team_id = EXCLUDED.away_team_id,
+         home_points = EXCLUDED.home_points,
+         away_points = EXCLUDED.away_points,
+         neutral_site = EXCLUDED.neutral_site
+    """)
 
 def pull_games(season):
     response = requests.get(BASE_URL + '/games', headers=headers, params={'year':season, 'seasonType':'regular'})
@@ -94,22 +121,36 @@ def load_team_stats(season, weeks):
     combined_load = pd.concat(frames, ignore_index=True)
     return combined_load
 
-team_stats = load_team_stats(2026, range(1, 7 + 1))
-raw = pd.read_csv('data/raw_games_2026.csv')
-team_ids = get_team_id(engine)
-games = clean_games(raw, team_ids)
-print(games.shape)
-print(games.dtypes)
-print(games.head())
+def add_drives(team_stats, games, season):
+    drives = pd.read_csv(f'data/raw_drives_{season}.csv')
+    mask = drives['gameId'].isin(games['game_id'])
+    drives = drives[mask].copy()
+    counts = drives.groupby(['gameId', 'isHomeOffense']).size().reset_index(name='drives')
+    m = counts.merge(games[['game_id', 'home_team_id', 'away_team_id']], left_on='gameId', right_on='game_id', how='left')
+    m['team_id'] = np.where(m['isHomeOffense'], m['home_team_id'], m['away_team_id'])
+    m = m[['game_id', 'team_id', 'drives']]
+    team_stats = team_stats.merge(m, on=['team_id', 'game_id'], how='left')
+    return team_stats
 
-print(team_stats.shape)
-mask = team_stats['game_id'].isin(games['game_id'])
-team_stats = team_stats[mask].copy()
-print(team_stats.shape)
-print(team_stats['team_id'].isin(team_ids).all())
+def load_season(season, weeks):
+    raw = pd.read_csv(f'data/raw_games_{season}.csv')
+    team_ids = get_team_id(engine)
+    games = clean_games(raw = raw, team_ids = team_ids)
+    team_stats = load_team_stats(season=season, weeks=weeks)
+    mask = team_stats['game_id'].isin(games['game_id'])
+    team_stats = team_stats[mask].copy()
+    team_stats = add_drives(team_stats = team_stats, games=games, season=season)
+    assert team_stats['team_id'].isin(team_ids).all()
+    assert (team_stats.groupby('game_id').size() == 2).all()
+    assert team_stats.duplicated(['game_id', 'team_id']).sum() == 0
+    assert team_stats['drives'].notna().all()
+    assert team_stats['game_id'].isin(games['game_id']).all()
+    games_rows = games.astype(object).where(games.notna(), None).to_dict('records')
+    stats_rows = team_stats.astype(object).where(team_stats.notna(), None).to_dict('records')
+    with engine.begin() as conn:
+        conn.execute(games_sql, games_rows)
+        conn.execute(stats_sql, stats_rows)
 
-print(team_stats.groupby('game_id').size().value_counts())
 
-print(team_stats['game_id'].nunique())
-print(team_stats.duplicated().sum())
-
+if __name__ == '__main__':
+    load_season(2026, range(1, 8))
