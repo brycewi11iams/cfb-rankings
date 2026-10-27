@@ -57,4 +57,50 @@ ON tg.team_id = t.team_id
 GROUP BY team_name, season, tg.team_id, classification
 );
 
+CREATE OR REPLACE VIEW team_game_stats AS (
+SELECT
+	tg.team_id,
+	tg.opp_id,
+	tg.game_id,
+	tg.season,
+	tg.week,
+	tg.site,
+	tg.points_for,
+	tg.points_against,
+	s.drives AS off_drives,
+	s.plays AS off_plays,
+	s.yards AS off_yards,
+	s.turnovers AS off_turnovers,
+	o.drives AS def_drives,
+	o.plays AS def_plays,
+	o.yards AS def_yards,
+	o.turnovers AS def_turnovers,
+	ROUND(tg.points_for::NUMERIC / s.drives, 3) AS off_pts_per_drive,
+	ROUND(s.yards::NUMERIC / s.drives, 3) AS off_yds_per_drive,
+	ROUND(s.yards::NUMERIC / s.plays, 3) AS off_ypp,
+	ROUND(s.turnovers::NUMERIC / s.drives, 3) AS off_to_per_drive,
+	ROUND(tg.points_against::NUMERIC / o.drives, 3) AS def_pts_per_drive,
+	ROUND(o.yards::NUMERIC / o.drives, 3) AS def_yds_per_drive,
+	ROUND(o.yards::NUMERIC / o.plays, 3) AS def_ypp,
+	ROUND(o.turnovers::NUMERIC / o.drives, 3) AS def_to_per_drive
+FROM team_games tg
+JOIN stats s ON tg.team_id = s.team_id AND tg.game_id = s.game_id
+JOIN stats o ON tg.opp_id = o.team_id AND tg.game_id = o.game_id
+);
 
+CREATE OR REPLACE VIEW team_game_opp_record AS (
+SELECT
+	tg.team_id,
+	tg.opp_id,
+	tg.game_id,
+	tg.season,
+	tg.week,
+	tg.result,
+	r.classification AS opp_classification,
+	r.wins - CASE WHEN tg.RESULT = 'L' THEN 1 ELSE 0 END AS opp_wins,
+	r.losses - CASE WHEN tg.RESULT = 'W' THEN 1 ELSE 0 END AS opp_losses,
+	(r.wins - CASE WHEN tg.RESULT = 'L' THEN 1 ELSE 0 END + r.losses - CASE WHEN tg.RESULT = 'W' THEN 1 ELSE 0 END) AS opp_games,
+	ROUND((r.wins - CASE WHEN tg.RESULT = 'L' THEN 1 ELSE 0 END)::NUMERIC / (NULLIF(r.wins - CASE WHEN tg.RESULT = 'L' THEN 1 ELSE 0 END + r.losses - CASE WHEN tg.RESULT = 'W' THEN 1 ELSE 0 END, 0)), 3) AS opp_win_pct
+FROM  team_games tg
+JOIN team_records r ON r.team_id = tg.opp_id AND r.season = tg.season
+);
