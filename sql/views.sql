@@ -104,3 +104,19 @@ SELECT
 FROM  team_games tg
 JOIN team_records r ON r.team_id = tg.opp_id AND r.season = tg.season
 );
+
+CREATE OR REPLACE VIEW team_sos AS (
+SELECT
+	t.team_id,
+	t.team_name,
+	tg.season,
+	COUNT(g.game_id) AS games,
+	COUNT(g.game_id) FILTER (WHERE opp_classification = 'FBS') AS fbs_games,
+	COUNT(g.game_id) FILTER (WHERE opp_classification = 'FCS') AS fcs_games,
+	ROUND(AVG(opp_win_pct) FILTER (WHERE opp_classification = 'FBS'), 3) AS avg_opp_win_pct
+FROM teams t
+JOIN team_game_opp_record tg ON t.team_id = tg.team_id
+JOIN games g ON g.game_id = tg.game_id
+WHERE classification = 'FBS'
+GROUP BY t.team_id, team_name, tg.season
+);
