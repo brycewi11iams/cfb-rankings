@@ -41,6 +41,7 @@ games_sql = text("""
 
 def pull_games(season):
     response = requests.get(BASE_URL + '/games', headers=headers, params={'year':season, 'seasonType':'regular'})
+    response.raise_for_status()
     games = pd.DataFrame(response.json())
     games.to_csv(f'data/raw_games_{season}.csv', index=False)
     return games
@@ -150,6 +151,19 @@ def load_season(season, weeks):
     with engine.begin() as conn:
         conn.execute(games_sql, games_rows)
         conn.execute(stats_sql, stats_rows)
+
+
+response = requests.get(BASE_URL + '/drives', headers=headers, params={'year':2026, 'seasonType':'regular'})
+print(response.status_code)
+drives = pd.DataFrame(response.json())
+drives.to_csv(f'data/raw_drives_2026.csv', index=False)
+
+def pull_drives(season):
+    response = requests.get(BASE_URL + '/drives', headers=headers, params={'year':season, 'seasonType':'regular'})
+    response.raise_for_status()
+    drives = pd.DataFrame(response.json())
+    drives.to_csv(f'data/raw_drives_{season}.csv', index=False)
+    return drives
 
 
 if __name__ == '__main__':
