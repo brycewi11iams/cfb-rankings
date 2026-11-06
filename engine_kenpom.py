@@ -35,6 +35,48 @@ def load_games(season, as_of_week):
     df['weight'] = np.where(fcs_check, FCS_WEIGHT, 1)
     return df
 
+
+def fit_ratings(df):
+    league_avg = (df['off_pts_per_drive'] * df['weight']).sum() / df['weight'].sum()
+    off_distinct_key = df['team_key'].unique()
+    def_distinct_key = df['opp_key'].unique()
+    off_rating = pd.Series(0.0, index=off_distinct_key)
+    def_rating = pd.Series(0.0, index=def_distinct_key)
+
+    for i in range(100):
+        df['off_resid'] = df['off_pts_per_drive'] - league_avg - df['opp_key'].map(def_rating) 
+        new_off = (df['off_resid'] * df['weight']).groupby(df['team_key']).sum() / df['weight'].groupby(df['team_key']).sum()
+        new_off = new_off - new_off.mean()
+        df['def_resid'] = df['def_pts_per_drive'] - league_avg - df['opp_key'].map(new_off)
+        new_def = (df['def_resid'] * df['weight']).groupby(df['team_key']).sum() / df['weight'].groupby(df['team_key']).sum()
+        new_def = new_def - new_def.mean()
+
+        off_change = (new_off - off_rating).abs().max()
+        def_change = (new_def - def_rating).abs().max()
+        off_rating = new_off
+        def_rating = new_def
+        change = max(off_change, def_change)
+        if change < .0001:
+            break
+    return off_rating, def_rating
+
+def run_engine(season, as_of_week):
+    df = load_games(season, as_of_week)
+    off, defn = fit_ratings(df)
+    ratings = pd.DataFrame({'off': off, 'def': defn})
+    ratings['net'] = off - defn
+    names_sql = text("""
+    SELECT team_id, team_name
+    FROM teams
+    """)
+    names = pd.read_sql(names_sql, engine)
+    names_lookup = names.set_index('team_id')['team_name']
+    ratings['team_name'] = ratings.index.map(names_lookup)
+    ratings['team_name'] = ratings['team_name'].fillna('FCS (pooled)')
+    return ratings
+
 if __name__ == '__main__':
-    test = load_games(2026, 9)
-    print(test.shape)
+    ratings = run_engine(2025 ,16)
+    ratings = ratings[ratings.index != -1]
+    ratings = ratings.sort_values(by='net', ascending=False)
+    print(ratings.head(25))
