@@ -33,6 +33,8 @@ def load_games(season, as_of_week):
 
     fcs_check = (df['team_key'] == -1) | (df['opp_key'] == -1)
     df['weight'] = np.where(fcs_check, FCS_WEIGHT, 1)
+    site = {'A': -1, 'N': 0, 'H': 1}
+    df['site_num'] = df['site'].map(site)
     return df
 
 
@@ -42,22 +44,30 @@ def fit_ratings(df):
     def_distinct_key = df['opp_key'].unique()
     off_rating = pd.Series(0.0, index=off_distinct_key)
     def_rating = pd.Series(0.0, index=def_distinct_key)
+    hfa = 0.0
 
     for i in range(100):
-        df['off_resid'] = df['off_pts_per_drive'] - league_avg - df['opp_key'].map(def_rating) 
+        df['off_resid'] = df['off_pts_per_drive'] - league_avg - df['opp_key'].map(def_rating) - hfa * df['site_num']
         new_off = (df['off_resid'] * df['weight']).groupby(df['team_key']).sum() / df['weight'].groupby(df['team_key']).sum()
         new_off = new_off - new_off.mean()
-        df['def_resid'] = df['def_pts_per_drive'] - league_avg - df['opp_key'].map(new_off)
+        df['def_resid'] = df['def_pts_per_drive'] - league_avg - df['opp_key'].map(new_off) - hfa * (-df['site_num'])
         new_def = (df['def_resid'] * df['weight']).groupby(df['team_key']).sum() / df['weight'].groupby(df['team_key']).sum()
         new_def = new_def - new_def.mean()
+        leftover = df['off_pts_per_drive'] - league_avg - df['team_key'].map(new_off) - df['opp_key'].map(new_def)
+        top = (df['weight'] * df['site_num'] * leftover).sum()
+        bottom = (df['weight'] * df['site_num'] * df['site_num']).sum()
+        new_hfa = top / bottom
+        hfa_change = abs(new_hfa - hfa)
 
         off_change = (new_off - off_rating).abs().max()
         def_change = (new_def - def_rating).abs().max()
         off_rating = new_off
         def_rating = new_def
-        change = max(off_change, def_change)
+        hfa = new_hfa
+        change = max(off_change, def_change, hfa_change)
         if change < .0001:
             break
+    print(hfa)
     return off_rating, def_rating
 
 def run_engine(season, as_of_week):
@@ -76,7 +86,7 @@ def run_engine(season, as_of_week):
     return ratings
 
 if __name__ == '__main__':
-    ratings = run_engine(2025 ,16)
+    ratings = run_engine(2025, 16)
     ratings = ratings[ratings.index != -1]
     ratings = ratings.sort_values(by='net', ascending=False)
     print(ratings.head(25))
