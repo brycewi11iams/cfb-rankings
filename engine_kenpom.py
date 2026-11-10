@@ -100,14 +100,29 @@ def prepare_rows(ratings, league_avg, season, week):
     ratings['engine'] = 'kenpom'
     ratings = ratings[['team_id', 'season', 'week', 'engine', 'score', 'rank_num', 'off_rating', 'def_rating']]
     ratings = ratings.reset_index(drop=True)
-    print(ratings['score'].mean())
     return ratings
+
+def store_rows(ratings):
+    engine_sql = text("""
+            INSERT INTO engine_results (team_id, season, week, engine, score, rank_num, off_rating, def_rating)
+            VALUES (:team_id, :season, :week, :engine, :score, :rank_num, :off_rating, :def_rating)
+            ON CONFLICT (team_id, season, week, engine) DO UPDATE SET
+            score = EXCLUDED.score,
+            rank_num = EXCLUDED.rank_num,
+            off_rating = EXCLUDED.off_rating,
+            def_rating = EXCLUDED.def_rating
+        """)
+    records = ratings.astype(object).where(ratings.notna(), None).to_dict('records')
+    with engine.begin() as conn:
+        conn.execute(engine_sql, records)
+    print(len(records))
 
 if __name__ == '__main__':
     ratings, hfa, league_avg = run_engine(2025, 16)
     ratings = ratings[ratings.index != -1]
     ratings = ratings.sort_values(by='net', ascending=False)
     rows = prepare_rows(ratings, league_avg, 2025, 16)
+    store_rows(rows)
     print(rows['rank_num'].max())
     print(rows['rank_num'].nunique())
     print(rows.head(5).sort_values(by='rank_num'))
