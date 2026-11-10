@@ -65,6 +65,8 @@ CREATE TABLE engine_results(
 	engine varchar(50) NOT NULL,
 	score DOUBLE PRECISION NOT NULL,
 	rank_num INTEGER NOT NULL,
+	off_rating DOUBLE PRECISION,
+	def_rating DOUBLE PRECISION
 	CONSTRAINT pk_engine_results PRIMARY KEY (
 	team_id, season, week, engine),
 	CONSTRAINT fk_engine_results_team FOREIGN KEY (team_id)
