@@ -67,12 +67,11 @@ def fit_ratings(df):
         change = max(off_change, def_change, hfa_change)
         if change < .0001:
             break
-    print(hfa)
-    return off_rating, def_rating
+    return off_rating, def_rating, hfa, league_avg
 
 def run_engine(season, as_of_week):
     df = load_games(season, as_of_week)
-    off, defn = fit_ratings(df)
+    off, defn, hfa, league_avg = fit_ratings(df)
     ratings = pd.DataFrame({'off': off, 'def': defn})
     ratings['net'] = off - defn
     names_sql = text("""
@@ -83,10 +82,12 @@ def run_engine(season, as_of_week):
     names_lookup = names.set_index('team_id')['team_name']
     ratings['team_name'] = ratings.index.map(names_lookup)
     ratings['team_name'] = ratings['team_name'].fillna('FCS (pooled)')
-    return ratings
+    return ratings, hfa, league_avg
 
 if __name__ == '__main__':
-    ratings = run_engine(2025, 16)
+    ratings, hfa, league_avg = run_engine(2025, 16)
     ratings = ratings[ratings.index != -1]
     ratings = ratings.sort_values(by='net', ascending=False)
     print(ratings.head(25))
+    print(hfa)
+    print(league_avg)
