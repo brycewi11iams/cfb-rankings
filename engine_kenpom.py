@@ -84,10 +84,30 @@ def run_engine(season, as_of_week):
     ratings['team_name'] = ratings['team_name'].fillna('FCS (pooled)')
     return ratings, hfa, league_avg
 
+def prepare_rows(ratings, league_avg, season, week):
+    non_fcs = ratings.index != -1
+    ratings = ratings[non_fcs].copy()
+    ratings['off'] = ratings['off'] - ratings['off'].mean()
+    ratings['def'] = ratings['def'] - ratings['def'].mean()
+    ratings['net'] = ratings['off'] - ratings['def']
+    ratings['off_rating'] = (league_avg + ratings['off']) * 12
+    ratings['def_rating'] = (league_avg + ratings['def']) * 12
+    ratings['score'] = ratings['off_rating'] - ratings['def_rating']
+    ratings['rank_num'] = ratings['score'].rank(method='first', ascending=False).astype(int)
+    ratings['team_id'] = ratings.index
+    ratings['season'] = season
+    ratings['week'] = week
+    ratings['engine'] = 'kenpom'
+    ratings = ratings[['team_id', 'season', 'week', 'engine', 'score', 'rank_num', 'off_rating', 'def_rating']]
+    ratings = ratings.reset_index(drop=True)
+    print(ratings['score'].mean())
+    return ratings
+
 if __name__ == '__main__':
     ratings, hfa, league_avg = run_engine(2025, 16)
     ratings = ratings[ratings.index != -1]
     ratings = ratings.sort_values(by='net', ascending=False)
-    print(ratings.head(25))
-    print(hfa)
-    print(league_avg)
+    rows = prepare_rows(ratings, league_avg, 2025, 16)
+    print(rows['rank_num'].max())
+    print(rows['rank_num'].nunique())
+    print(rows.head(5).sort_values(by='rank_num'))
