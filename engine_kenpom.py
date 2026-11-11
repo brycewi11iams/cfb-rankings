@@ -117,12 +117,37 @@ def store_rows(ratings):
         conn.execute(engine_sql, records)
     print(len(records))
 
-if __name__ == '__main__':
-    ratings, hfa, league_avg = run_engine(2025, 16)
-    ratings = ratings[ratings.index != -1]
-    ratings = ratings.sort_values(by='net', ascending=False)
-    rows = prepare_rows(ratings, league_avg, 2025, 16)
+def run_and_store(season, week):
+    ratings, hfa, league_avg = run_engine(season, week)
+    rows = prepare_rows(ratings, league_avg, season, week)
     store_rows(rows)
-    print(rows['rank_num'].max())
-    print(rows['rank_num'].nunique())
-    print(rows.head(5).sort_values(by='rank_num'))
+    print(season, week, round(hfa, 3), len(rows))
+
+def get_weeks(season):
+    season_sql = text("""
+            SELECT DISTINCT(week)
+            FROM team_game_stats
+            WHERE season = :season
+            ORDER BY week
+    """)
+    weeks_df = pd.read_sql(season_sql, engine, params={'season': season})
+    weeks = weeks_df['week'].tolist()
+    return weeks
+
+def backfill():
+    for season in [2025, 2026]:
+        weeks = get_weeks(season)
+        for week in weeks:
+            run_and_store(season, week)
+
+
+if __name__ == '__main__':
+    run_and_store(2026, 1)
+    # ratings, hfa, league_avg = run_engine(2025, 16)
+    # ratings = ratings[ratings.index != -1]
+    # ratings = ratings.sort_values(by='net', ascending=False)
+    # rows = prepare_rows(ratings, league_avg, 2025, 16)
+    # store_rows(rows)
+    # print(rows['rank_num'].max())
+    # print(rows['rank_num'].nunique())
+    # print(rows.head(5).sort_values(by='rank_num'))
