@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy import text
+from engine_kenpom import store_rows
 
 load_dotenv()
 engine = create_engine(os.getenv('DATABASE_URL'))
@@ -78,15 +79,7 @@ def prepare_colley_rows(ratings, season, week):
     ratings = ratings.reset_index(drop=True)
     return ratings
 
-
 if __name__ == '__main__':
     ratings = run_colley(2026, 10)
     rows = prepare_colley_rows(ratings, 2026, 10)
-    print(rows.shape)
-    print(rows['rank_num'].nunique())
-    print(rows['rank_num'].max())
-    print(rows['rank_num'].min())
-    num_1 = rows['rank_num'] == 1
-    print(rows[num_1])
-    fcs_check = rows['team_id'] == -1
-    print(fcs_check.sum())
+    store_rows(rows)
