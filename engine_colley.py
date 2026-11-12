@@ -49,6 +49,44 @@ def build_colley(season, as_of_week):
     keys = games_per_team.index
     return c,b,keys
 
+def run_colley(season, as_of_week):
+    c, b, keys = build_colley(season, as_of_week)
+    ratings = np.linalg.solve(c, b)
+    ratings = pd.DataFrame(ratings, index=keys, columns=['rating'])
+    names_sql = text("""
+    SELECT team_id, team_name FROM teams
+    """)
+    names = pd.read_sql(names_sql, engine)
+    names_lookup = names.set_index('team_id')['team_name']
+    ratings['team_name'] = ratings.index.map(names_lookup)
+    ratings['team_name'] = ratings['team_name'].fillna('FCS (pooled)')
+    ratings = ratings.sort_values(by='rating', ascending=False)
+    return ratings
+
+def prepare_colley_rows(ratings, season, week):
+    non_fcs = ratings.index != -1
+    ratings = ratings[non_fcs].copy()
+    ratings['off_rating'] = None
+    ratings['def_rating'] = None
+    ratings['score'] = ratings['rating']
+    ratings['rank_num'] = ratings['score'].rank(method='first', ascending=False).astype(int)
+    ratings['team_id'] = ratings.index
+    ratings['season'] = season
+    ratings['week'] = week
+    ratings['engine'] = 'colley'
+    ratings = ratings[['team_id', 'season', 'week', 'engine', 'score', 'rank_num', 'off_rating', 'def_rating']]
+    ratings = ratings.reset_index(drop=True)
+    return ratings
+
+
 if __name__ == '__main__':
-    c, b, keys = build_colley(2026, 10)
-    
+    ratings = run_colley(2026, 10)
+    rows = prepare_colley_rows(ratings, 2026, 10)
+    print(rows.shape)
+    print(rows['rank_num'].nunique())
+    print(rows['rank_num'].max())
+    print(rows['rank_num'].min())
+    num_1 = rows['rank_num'] == 1
+    print(rows[num_1])
+    fcs_check = rows['team_id'] == -1
+    print(fcs_check.sum())
