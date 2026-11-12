@@ -43,6 +43,25 @@ def load_colley_games(season, as_of_week):
     print('game_id', (group != 2).sum())
     return df
 
+def build_colley(season, as_of_week):
+    df = load_colley_games(season, as_of_week)
+    pairs = pd.crosstab(df['team_key'], df['opp_key'])
+    games_per_team = pairs.sum(axis=1)
+    mask_losses = df['result'] == 'L'
+    losses = mask_losses.groupby(df['team_key']).sum()
+    losses = losses.reindex(games_per_team.index)
+    mask_wins = df['result'] == 'W'
+    wins = mask_wins.groupby(df['team_key']).sum()
+    wins = wins.reindex(games_per_team.index)
+    print('pairs shape', pairs.shape)
+    print('pairs equals transpose', pairs.equals(pairs.transpose()))
+    print('diag', np.diag(pairs).sum())
+    print('games per team', games_per_team.sum())
+    print('games per team fcs', games_per_team.loc[-1])
+    print('sum of wins', wins.sum())
+    check = (wins + losses) == games_per_team
+    print(check.all())
+
+
 if __name__ == '__main__':
-    load_colley_games(2026, 10)
-    load_colley_games(2026, 9)
+    build_colley(2026, 10)
