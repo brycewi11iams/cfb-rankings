@@ -115,7 +115,6 @@ def store_rows(ratings):
     records = ratings.astype(object).where(ratings.notna(), None).to_dict('records')
     with engine.begin() as conn:
         conn.execute(engine_sql, records)
-    print(len(records))
 
 def run_and_store(season, week):
     ratings, hfa, league_avg = run_engine(season, week)
