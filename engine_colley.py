@@ -16,7 +16,6 @@ def load_colley_games(season, as_of_week):
     """)
 
     df = pd.read_sql(games_sql, engine, params={'season': season, 'week': as_of_week})
-
     fcs_sql = text("""
     SELECT team_id
     FROM teams
@@ -30,17 +29,6 @@ def load_colley_games(season, as_of_week):
 
     df['team_key'] = np.where(fcs_team, -1, df['team_id'])
     df['opp_key'] = np.where(fcs_other_team, -1, df['opp_id'])
-    print('shape', df.shape)
-    fcs_count = df['team_key'] == -1
-    fcs_count_opp = df['opp_key'] == -1
-    print('fcs_team',fcs_count.sum())
-    print('fcs_opp', fcs_count_opp.sum())
-    wins = df['result'] == 'W'
-    losses = df['result'] == 'L'
-    print('wins', wins.sum())
-    print('losses', losses.sum())
-    group = df.groupby('game_id').size()
-    print('game_id', (group != 2).sum())
     return df
 
 def build_colley(season, as_of_week):
@@ -53,15 +41,14 @@ def build_colley(season, as_of_week):
     mask_wins = df['result'] == 'W'
     wins = mask_wins.groupby(df['team_key']).sum()
     wins = wins.reindex(games_per_team.index)
-    print('pairs shape', pairs.shape)
-    print('pairs equals transpose', pairs.equals(pairs.transpose()))
-    print('diag', np.diag(pairs).sum())
-    print('games per team', games_per_team.sum())
-    print('games per team fcs', games_per_team.loc[-1])
-    print('sum of wins', wins.sum())
-    check = (wins + losses) == games_per_team
-    print(check.all())
 
+    pairs_array = pairs.to_numpy()
+    c = np.diag(games_per_team + 2) - pairs_array
+    b = 1 + 1/2 * (wins - losses)
+    b = b.to_numpy()
+    keys = games_per_team.index
+    return c,b,keys
 
 if __name__ == '__main__':
-    build_colley(2026, 10)
+    c, b, keys = build_colley(2026, 10)
+    
