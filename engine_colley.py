@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy import text
-from engine_kenpom import store_rows
+from engine_kenpom import store_rows, get_weeks
 
 load_dotenv()
 engine = create_engine(os.getenv('DATABASE_URL'))
@@ -78,6 +78,20 @@ def prepare_colley_rows(ratings, season, week):
     ratings = ratings[['team_id', 'season', 'week', 'engine', 'score', 'rank_num', 'off_rating', 'def_rating']]
     ratings = ratings.reset_index(drop=True)
     return ratings
+
+def run_and_store_colley(season, week):
+    ratings = run_colley(season, week)
+    rows = prepare_colley_rows(ratings, season, week)
+    store_rows(rows)
+    print(season, week, len(rows))
+
+def backfill_colley():
+    for season in [2025, 2026]:
+        weeks = get_weeks(season)
+        for week in weeks:
+            run_and_store_colley(season, week)
+
+
 
 if __name__ == '__main__':
     ratings = run_colley(2026, 10)
