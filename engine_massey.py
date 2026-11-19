@@ -6,7 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy import text
 from engine_kenpom import store_rows, get_weeks
 
-FCS_WEIGHT = 0.5
+MARGIN_CAP = 28
+
 load_dotenv()
 engine = create_engine(os.getenv('DATABASE_URL'))
 
@@ -23,6 +24,8 @@ def load_massey_games(season, as_of_week):
     FROM teams
     WHERE classification = 'FCS'
     """)
+    if MARGIN_CAP is not None:
+        df['margin'] = df['margin'].clip(-MARGIN_CAP, MARGIN_CAP)
     fcs_df = pd.read_sql(fcs_sql, engine)
     fcs_ids = set(fcs_df['team_id'])
 
@@ -54,10 +57,8 @@ def build_massey(season, as_of_week):
 
 def run_massey(season, as_of_week):
     m, p, keys = build_massey(season, as_of_week)
-    m, p, keys = build_massey(season, as_of_week)
     if np.linalg.matrix_rank(m) < m.shape[0]:
         return None
-    ratings = np.linalg.solve(m, p)
     ratings = np.linalg.solve(m, p)
     ratings = pd.DataFrame(ratings, index=keys, columns=['rating'])
     names_sql = text("""
