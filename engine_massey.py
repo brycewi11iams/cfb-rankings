@@ -54,6 +54,10 @@ def build_massey(season, as_of_week):
 
 def run_massey(season, as_of_week):
     m, p, keys = build_massey(season, as_of_week)
+    m, p, keys = build_massey(season, as_of_week)
+    if np.linalg.matrix_rank(m) < m.shape[0]:
+        return None
+    ratings = np.linalg.solve(m, p)
     ratings = np.linalg.solve(m, p)
     ratings = pd.DataFrame(ratings, index=keys, columns=['rating'])
     names_sql = text("""
@@ -81,14 +85,21 @@ def prepare_massey_rows(ratings, season, week):
     ratings = ratings.reset_index(drop=True)
     return ratings
 
+def run_and_store_massey(season, week):
+    ratings = run_massey(season, week)
+    if ratings is None:
+        print('skip', season, week)
+        return
+    rows = prepare_massey_rows(ratings, season, week)
+    store_rows(rows)
+    print(season, week, len(rows))
+
+def backfill_massey():
+    for season in [2025, 2026]:
+        weeks = get_weeks(season)
+        for week in weeks:
+            run_and_store_massey(season, week)
+
 if __name__ == '__main__':
-    ratings = run_massey(2026, 11)
-    rows = prepare_massey_rows(ratings, 2026, 11)
-    print(rows.shape)
-    print(rows['rank_num'].nunique())
-    mask = rows['rank_num'] ==1
-    print(rows[mask])
-    fcs = rows['team_id'] == -1
-    print(fcs.sum())
-    print(rows['engine'].nunique())
+    run_and_store_massey(2026, 11)
     
