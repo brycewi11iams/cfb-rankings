@@ -94,6 +94,7 @@ def backfill_colley():
 
 
 if __name__ == '__main__':
-    ratings = run_colley(2026, 10)
-    rows = prepare_colley_rows(ratings, 2026, 10)
-    store_rows(rows)
+    # ratings = run_colley(2026, 10)
+    # rows = prepare_colley_rows(ratings, 2026, 10)
+    # store_rows(rows)
+    pass

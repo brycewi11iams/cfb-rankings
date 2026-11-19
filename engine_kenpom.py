@@ -141,7 +141,7 @@ def backfill():
 
 
 if __name__ == '__main__':
-    run_and_store(2026, 1)
+    # run_and_store(2026, 1)
     # ratings, hfa, league_avg = run_engine(2025, 16)
     # ratings = ratings[ratings.index != -1]
     # ratings = ratings.sort_values(by='net', ascending=False)
@@ -150,3 +150,4 @@ if __name__ == '__main__':
     # print(rows['rank_num'].max())
     # print(rows['rank_num'].nunique())
     # print(rows.head(5).sort_values(by='rank_num'))
+    pass
