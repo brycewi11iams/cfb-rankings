@@ -167,6 +167,7 @@ def pull_drives(season):
 
 
 if __name__ == '__main__':
-    load_season(2026, range(1, 8))
+    # load_season(2026, range(1, 8))
+    pass
 
 
