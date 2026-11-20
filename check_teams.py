@@ -10,11 +10,11 @@ BASE_URL = "https://api.collegefootballdata.com"                  # COPY the bas
 headers = {"Authorization": f"Bearer {API_KEY}"}   # COPY if test_setup.py does it differently
 
 # 1. call the endpoint
-response = requests.get(BASE_URL + "/teams/fbs", headers=headers, params={"year": 2026})
+response = requests.get(BASE_URL + "/teams", headers=headers, params={"year": 2026})
 print("status:", response.status_code)
 
 # 2. JSON into a DataFrame
-teams = pd.DataFrame(response.json)
+teams = pd.DataFrame(response.json())
 # 3. every field CFBD gives you
 print(teams.columns.tolist())
 

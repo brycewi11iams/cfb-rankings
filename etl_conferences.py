@@ -32,20 +32,19 @@ def pull_conferences(season):
     conferences = conferences[['team_id', 'season', 'conference']]
     return conferences
 
+def load_conferences(seasons):
+    with engine.begin() as conn:
+        for season in seasons:
+            df = pull_conferences(season)
+            rows = df.to_dict('records')
+            conn.execute(conference_sql, rows)
+            print(season, len(rows))
+        
+
 if __name__ == '__main__':
     df_2025 = pull_conferences(2025)
     df_2026 = pull_conferences(2026)
-    print('2025 shape', df_2025.shape)
-    print('2026 shape', df_2026.shape)
-    print('2025 conference null', df_2025['conference'].isna().sum())
-    print('2026 conference null', df_2026['conference'].isna().sum())
-    print('2025 dups', df_2025['team_id'].duplicated().sum())
-    print('2026 dups', df_2026['team_id'].duplicated().sum())
-    ND = df_2026[df_2026['team_id'] == 87]
-    ucon = df_2026[df_2026['team_id'] == 41]
-    ND_25 = df_2025[df_2025['team_id'] == 87]
-    ucon_25 = df_2025[df_2025['team_id'] == 41]
-    print('ND', ND)
-    print('uconn', ucon)
-    print('2025 ND', ND_25)
-    print('ucon_25', ucon_25)
+    known = pd.read_sql(text("SELECT team_id FROM teams"), engine)
+    known_ids = set(known['team_id'])
+    print("2025 not in teams:", set(df_2025['team_id']) - known_ids)
+    print("2026 not in teams:", set(df_2026['team_id']) - known_ids)
