@@ -42,9 +42,4 @@ def load_conferences(seasons):
         
 
 if __name__ == '__main__':
-    df_2025 = pull_conferences(2025)
-    df_2026 = pull_conferences(2026)
-    known = pd.read_sql(text("SELECT team_id FROM teams"), engine)
-    known_ids = set(known['team_id'])
-    print("2025 not in teams:", set(df_2025['team_id']) - known_ids)
-    print("2026 not in teams:", set(df_2026['team_id']) - known_ids)
+   pass
