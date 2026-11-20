@@ -16,6 +16,15 @@ CREATE TABLE teams(
 	CONSTRAINT ck_classification CHECK (classification IN ('fbs', 'fcs'))
 );
 
+CREATE TABLE team_conferences(
+	team_id INTEGER NOT NULL,
+	season INTEGER NOT NULL,
+	conference varchar(50) NOT NULL,
+	CONSTRAINT pk_team_conference PRIMARY kEY(team_id, season),
+	CONSTRAINT fk_team_conference FOREIGN KEY (team_id)
+		REFERENCES teams (team_id)
+);
+
 CREATE TABLE games(
 	game_id INTEGER,
 	season INTEGER NOT NULL,
