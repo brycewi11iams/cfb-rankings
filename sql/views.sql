@@ -120,3 +120,17 @@ JOIN games g ON g.game_id = tg.game_id
 WHERE classification = 'FBS'
 GROUP BY t.team_id, team_name, tg.season
 );
+
+CREATE OR REPLACE VIEW team_tier AS (
+	SELECT
+		t.team_id,
+		sl.season,
+		tc.conference,
+		CASE WHEN tc.conference IN ('SEC', 'Big Ten', 'Big 12', 'ACC') THEN 'P4'
+		WHEN t.team_id = 87 THEN 'P4'
+		ELSE 'G6' END AS tier
+	FROM teams t
+	CROSS JOIN(SELECT DISTINCT season FROM team_conferences) AS sl
+	LEFT JOIN team_conferences tc ON t.team_id = tc.team_id AND tc.season = sl.season
+	WHERE t.classification = 'FBS'
+);
