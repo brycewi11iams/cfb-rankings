@@ -134,3 +134,24 @@ CREATE OR REPLACE VIEW team_tier AS (
 	LEFT JOIN team_conferences tc ON t.team_id = tc.team_id AND tc.season = sl.season
 	WHERE t.classification = 'FBS'
 );
+
+CREATE OR REPLACE VIEW team_game_tier AS (
+SELECT
+    tg.team_id,
+    tg.opp_id,
+    tg.game_id,
+    tg.season,
+    tg.week,
+    tg.result,
+    CASE WHEN o.classification = 'FCS' THEN 'FCS'
+         ELSE tt.tier END AS opp_tier,
+    CASE WHEN o.classification = 'FCS' AND tg.result = 'L' THEN 'G6'
+         WHEN o.classification = 'FCS' THEN NULL
+         ELSE tt.tier END AS counts_as
+FROM team_games tg
+JOIN teams t ON t.team_id = tg.team_id
+JOIN teams o ON o.team_id = tg.opp_id
+LEFT JOIN team_tier tt ON tt.team_id = tg.opp_id AND tt.season = tg.season
+WHERE t.classification = 'FBS'
+);
+
