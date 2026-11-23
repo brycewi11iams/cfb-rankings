@@ -229,3 +229,23 @@ FROM team_asof_record c
 LEFT JOIN team_game_opp_asof tgt ON c.team_id = tgt.team_id AND c.season = tgt.season AND c.as_of_week = tgt.as_of_week
 GROUP BY c.team_id, c.season, c.as_of_week
 );
+
+CREATE OR REPLACE VIEW team_asof_oopp_avg AS (
+SELECT
+	b.team_id,
+	b.season,
+	b.as_of_week,
+	AVG(o.p4_opp_wp) FILTER (WHERE g.opp_tier = 'P4') AS p4_oopp_wp,
+	AVG(o.g6_opp_wp) FILTER (WHERE g.opp_tier = 'G6') AS g6_oopp_wp
+FROM team_asof_opp_avg b
+LEFT JOIN team_game_opp_asof g
+	ON g.team_id = b.team_id
+	AND g.season = b.season
+	AND g.as_of_week = b.as_of_week
+LEFT JOIN team_asof_opp_avg o
+	ON o.team_id = g.opp_id
+	AND o.season = g.season
+	AND o.as_of_week = g.as_of_week
+GROUP BY b.team_id, b.season, b.as_of_week
+);
+
