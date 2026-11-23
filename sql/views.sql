@@ -155,3 +155,21 @@ LEFT JOIN team_tier tt ON tt.team_id = tg.opp_id AND tt.season = tg.season
 WHERE t.classification = 'FBS'
 );
 
+CREATE OR REPLACE VIEW team_asof_record AS (
+SELECT
+	tt.team_id,
+	tt.season,
+	w.as_of_week,
+	COUNT(*) FILTER (WHERE g.counts_as = 'P4' AND g.RESULT = 'W') AS p4_wins,
+	COUNT(*) FILTER (WHERE g.counts_as = 'P4' AND g.RESULT = 'L') AS p4_losses,
+	COUNT(*) FILTER (WHERE g.counts_as = 'G6' AND g.RESULT = 'W') AS g6_wins,
+	COUNT(*) FILTER (WHERE g.counts_as = 'G6' AND g.RESULT = 'L') AS g6_losses,
+	COUNT(*) FILTER (WHERE g.counts_as = 'P4') AS p4_games,
+	COUNT(*) FILTER (WHERE g.counts_as = 'G6') AS g6_games,
+	(COUNT(*) FILTER (WHERE g.counts_as = 'P4' AND g.RESULT = 'W'))::NUMERIC / NULLIF(COUNT(*) FILTER (WHERE g.counts_as = 'P4'), 0) AS p4_win_pct,
+	(COUNT(*) FILTER (WHERE g.counts_as = 'G6' AND g.RESULT = 'W'))::NUMERIC / NULLIF(COUNT(*) FILTER (WHERE g.counts_as = 'G6'), 0) AS g6_win_pct
+	FROM team_tier tt
+	JOIN (SELECT DISTINCT season, week AS as_of_week FROM team_game_tier) AS w ON w.season = tt.season
+	LEFT JOIN team_game_tier g ON tt.team_id = g.team_id AND tt.season = g.season AND g.week <= as_of_week
+	GROUP BY tt.team_id, tt.season, as_of_week
+);
