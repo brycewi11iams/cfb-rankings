@@ -173,3 +173,45 @@ SELECT
 	LEFT JOIN team_game_tier g ON tt.team_id = g.team_id AND tt.season = g.season AND g.week <= as_of_week
 	GROUP BY tt.team_id, tt.season, as_of_week
 );
+
+CREATE OR REPLACE VIEW team_game_opp_asof AS (
+SELECT
+	x.team_id,
+	x.opp_id,
+	x.game_id,
+	x.season,
+	x.week,
+	x.as_of_week,
+	x.result,
+	x.opp_tier,
+	x.opp_wins,
+	x.opp_losses,
+	x.opp_games,
+	x.opp_wins::NUMERIC / NULLIF(x.opp_games, 0) AS opp_win_pct
+FROM (
+	SELECT
+		tg.team_id,
+		tg.opp_id,
+		tg.game_id,
+		tg.season,
+		tg.week,
+		tr.as_of_week,
+		tg.result,
+		tg.opp_tier,
+		CASE WHEN tg.result = 'L'
+			THEN (tr.p4_wins + tr.g6_wins) - 1
+			ELSE (tr.p4_wins + tr.g6_wins)
+		END AS opp_wins,
+		CASE WHEN tg.result = 'W'
+			THEN (tr.p4_losses + tr.g6_losses) - 1
+			ELSE (tr.p4_losses + tr.g6_losses)
+		END AS opp_losses,
+		(tr.p4_wins + tr.g6_wins + tr.p4_losses + tr.g6_losses) - 1 AS opp_games
+	FROM team_game_tier tg
+	JOIN team_asof_record tr
+		ON tr.team_id = tg.opp_id
+		AND tr.season = tg.season
+		AND tr.as_of_week >= tg.week
+	WHERE tg.opp_tier != 'FCS'
+) AS x
+);
