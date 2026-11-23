@@ -215,3 +215,17 @@ FROM (
 	WHERE tg.opp_tier != 'FCS'
 ) AS x
 );
+
+CREATE OR REPLACE VIEW team_asof_opp_avg AS (
+SELECT
+	c.team_id,
+	c.season,
+	c.as_of_week,
+	COUNT(tgt.game_id) FILTER(WHERE tgt.opp_tier = 'P4') AS p4_opp_games,
+	COUNT(tgt.game_id) FILTER(WHERE tgt.opp_tier = 'G6') AS g6_opp_games,
+	AVG(tgt.opp_win_pct) FILTER(WHERE tgt.opp_tier = 'P4') AS p4_opp_wp,
+	AVG(tgt.opp_win_pct) FILTER(WHERE tgt.opp_tier = 'G6') AS g6_opp_wp
+FROM team_asof_record c
+LEFT JOIN team_game_opp_asof tgt ON c.team_id = tgt.team_id AND c.season = tgt.season AND c.as_of_week = tgt.as_of_week
+GROUP BY c.team_id, c.season, c.as_of_week
+);
