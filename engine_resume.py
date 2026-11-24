@@ -32,7 +32,10 @@ def score_resume(df, g6_scale=G6_SCALE):
     df['g6_score'] = ((3 * df['g6_win_pct']) + (2 * df['g6_opp_wp']) + (df['g6_oopp_wp'])) / 6
     df['p4_score'] = df['p4_score'].fillna(0)
     df['g6_score'] = df['g6_score'].fillna(0)
-    df['score'] = ((df['g6_games'] * df['g6_score'] * g6_scale) + (df['p4_games'] * df['p4_score'])) / (df['g6_games'] + df['p4_games'])
+    total = df['g6_games'] + df['p4_games']
+    total = total.where(total > 0)
+    df['score'] = ((df['g6_games'] * df['g6_score'] * g6_scale) + (df['p4_games'] * df['p4_score'])) / total
+    df['score'] = df['score'].astype(float)
     return df
 
 def run_resume(season, as_of_week):
