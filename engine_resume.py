@@ -8,7 +8,7 @@ from engine_kenpom import store_rows, get_weeks
 
 load_dotenv()
 engine = create_engine(os.getenv('DATABASE_URL'))
-G6_SCALE = 0.7
+G6_SCALE = 0.8
 
 def load_resume_inputs(season, as_of_week):
     sql = text("""
