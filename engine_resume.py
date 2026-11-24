@@ -35,19 +35,53 @@ def score_resume(df, g6_scale=G6_SCALE):
     df['score'] = ((df['g6_games'] * df['g6_score'] * g6_scale) + (df['p4_games'] * df['p4_score'])) / (df['g6_games'] + df['p4_games'])
     return df
 
-
-if __name__ == '__main__':
-    df = load_resume_inputs(2026, 12)
-    # print(df.shape)
-    # print(df['team_id'].nunique())
-    # print(df.isna().sum())
-    # df_2025 = load_resume_inputs(2025, 16)
-    # print(df_2025.shape)
+def run_resume(season, as_of_week):
+    df = load_resume_inputs(season, as_of_week)
     score = score_resume(df)
-    print(score['score'].isna().sum())
-    print(score['score'].min())
-    print(score['score'].max())
-    ND = score[score['team_id'] == 87]
-    print(ND)
+    mask = (df['p4_games'] + df['g6_games'] > 0).copy()
+    score = score[mask].copy()
+    names_sql = text("""
+    SELECT team_id, team_name FROM teams
+    """)
+    names = pd.read_sql(names_sql, engine)
+    names_lookup = names.set_index('team_id')['team_name']
+    score['team_name'] = score['team_id'].map(names_lookup)
+    score = score.sort_values(by='score', ascending=False)
+    return score
+
+def prepare_resume_rows(score, season, week):
+    score = score.copy()
+    score['off_rating'] = None
+    score['def_rating'] = None
+    score['rank_num'] = score['score'].rank(method='first', ascending=False).astype(int)
+    score['season'] = season
+    score['week'] = week
+    score['engine'] = 'resume'
+    score = score[['team_id', 'season', 'week', 'engine', 'score', 'rank_num', 'off_rating', 'def_rating']]
+    score = score.reset_index(drop=True)
+    return score
+
+def run_and_store_resume(season, week):
+    score = run_resume(season, week)
+    rows = prepare_resume_rows(score, season, week)
+    store_rows(rows)
+    print(season, week, len(rows))
+
+def backfill_resume():
+    for season in [2025, 2026]:
+        weeks = get_weeks(season)
+        for week in weeks:
+            run_and_store_resume(season, week)
+    
+if __name__ == '__main__':
+    ratings = run_resume(2026, 12)
+    rows = prepare_resume_rows(ratings, 2026, 12)
+    print('rows shape', rows.shape)
+    print('rank unique', rows['rank_num'].nunique())
+    print('rank min', rows['rank_num'].min())
+    print('rank max', rows['rank_num'].max())
+    print('first team_ids', rows['team_id'].head(3).tolist())
+    print(ratings[['team_name', 'score']].head(10))
+
 
 
