@@ -65,9 +65,10 @@ if __name__ == '__main__':
     #     na_teams = team[mask]
     #     print(na_teams['team_name'])
     #     store_rows_excel(team)
-    df = clean_rankings('C:/Users/baw61/Projects/cfb-rankings/data/College Football Rankings 2025_final_copy.xlsx', 2025, 16)
-    team = add_team_id(df)
-    mask = team['team_id'].isna()
-    na_teams = team[mask]
-    print(na_teams['team_name'])
-    store_rows_excel(team)
+    # df = clean_rankings('C:/Users/baw61/Projects/cfb-rankings/data/College Football Rankings 2025_final_copy.xlsx', 2025, 16)
+    # team = add_team_id(df)
+    # mask = team['team_id'].isna()
+    # na_teams = team[mask]
+    # print(na_teams['team_name'])
+    # store_rows_excel(team)
+    pass

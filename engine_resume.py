@@ -77,14 +77,15 @@ def backfill_resume():
             run_and_store_resume(season, week)
     
 if __name__ == '__main__':
-    ratings = run_resume(2026, 12)
-    rows = prepare_resume_rows(ratings, 2026, 12)
-    print('rows shape', rows.shape)
-    print('rank unique', rows['rank_num'].nunique())
-    print('rank min', rows['rank_num'].min())
-    print('rank max', rows['rank_num'].max())
-    print('first team_ids', rows['team_id'].head(3).tolist())
-    print(ratings[['team_name', 'score']].head(10))
+    # ratings = run_resume(2026, 12)
+    # rows = prepare_resume_rows(ratings, 2026, 12)
+    # print('rows shape', rows.shape)
+    # print('rank unique', rows['rank_num'].nunique())
+    # print('rank min', rows['rank_num'].min())
+    # print('rank max', rows['rank_num'].max())
+    # print('first team_ids', rows['team_id'].head(3).tolist())
+    # print(ratings[['team_name', 'score']].head(10))
+    pass
 
 
 
