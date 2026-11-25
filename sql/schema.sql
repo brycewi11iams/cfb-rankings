@@ -95,5 +95,5 @@ CREATE TABLE weekly_rankings(
 	CONSTRAINT fk_weekly_rankings_team FOREIGN KEY (team_id)
 		REFERENCES teams (team_id),
 	CONSTRAINT unq_rank_season_week UNIQUE (season, week, rank_num),
-	CONSTRAINT ck_rank CHECK (rank_num BETWEEN 1 AND 25)
+	CONSTRAINT ck_rank CHECK (rank_num BETWEEN 1 AND 40)
 );
