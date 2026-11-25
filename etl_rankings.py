@@ -12,7 +12,10 @@ name_fixes = {
     'JMU': 'James Madison',
     'USF': 'South Florida',
     'UNT': 'North Texas',
-    'Louisana Tech': 'Louisiana Tech'
+    'Louisana Tech': 'Louisiana Tech',
+    'PITT': 'Pittsburgh',
+    'TENNESSEE': 'Tennessee',
+    'MISSOURI': 'Missouri'
 }
 load_dotenv()
 engine = create_engine(os.getenv('DATABASE_URL'))
@@ -54,11 +57,17 @@ def store_rows_excel(df):
 
 
 if __name__ == '__main__':
-    for i in range(5, 14):
-        df = clean_rankings(f'C:/Users/baw61/Projects/cfb-rankings/data/College_Football_Rankings_2026_week_{i}.xlsx', 2026, i-1)
-        print(i)
-        team = add_team_id(df)
-        mask = team['team_id'].isna()
-        na_teams = team[mask]
-        print(na_teams['team_name'])
-        store_rows_excel(team)
+    # for i in range(5, 14):
+    #     df = clean_rankings(f'C:/Users/baw61/Projects/cfb-rankings/data/College_Football_Rankings_2026_week_{i}.xlsx', 2026, i-1)
+    #     print(i)
+    #     team = add_team_id(df)
+    #     mask = team['team_id'].isna()
+    #     na_teams = team[mask]
+    #     print(na_teams['team_name'])
+    #     store_rows_excel(team)
+    df = clean_rankings('C:/Users/baw61/Projects/cfb-rankings/data/College Football Rankings 2025_final_copy.xlsx', 2025, 16)
+    team = add_team_id(df)
+    mask = team['team_id'].isna()
+    na_teams = team[mask]
+    print(na_teams['team_name'])
+    store_rows_excel(team)
