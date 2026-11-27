@@ -92,4 +92,5 @@ if __name__ == '__main__':
     # print(df['rank_num'].nunique())
     # num_1 = df[df['rank_num'] == 1]
     # print(num_1['team_id'])
-    run_and_store_blend(2026, 12)
+    # run_and_store_blend(2026, 12)
+    pass
