@@ -57,11 +57,12 @@ def run_and_store_blend(season, week):
     store_rows(rows)
     print(season, week, len(rows))
 
-# def backfill_resume():
-#     for season in [2025, 2026]:
-#         weeks = get_weeks(season)
-#         for week in weeks:
-#             run_and_store_blend(season, week)
+def backfill_blend():
+    for season in [2025, 2026]:
+        weeks = get_weeks(season)
+        for week in weeks:
+            if week >= 6:
+                run_and_store_blend(season, week)
 
 if __name__ == '__main__':
     # df = combined_engines(2026, 12)
