@@ -81,7 +81,7 @@ CREATE TABLE engine_results(
 	CONSTRAINT fk_engine_results_team FOREIGN KEY (team_id)
 		REFERENCES teams (team_id),
 	CONSTRAINT ck_engine CHECK (engine IN (
-	'kenpom', 'colley', 'massey', 'resume', 'personal', 'combined')),
+	'kenpom', 'colley', 'massey', 'resume', 'personal', 'blend')),
 	CONSTRAINT ck_rank_num CHECK (rank_num >= 1)
 );
 
